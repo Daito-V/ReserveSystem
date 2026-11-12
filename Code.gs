@@ -52,11 +52,14 @@ function getInitialData() {
 
 function listReservations(dateText) {
   const day = String(dateText || '');
+  // Sheets I/O is the expensive part. Read each table once, then resolve names in memory.
+  const roomsById = new Map(readRows_('rooms').map(function (room) { return [Number(room.id), room]; }));
+  const usersById = new Map(readRows_('users').map(function (user) { return [Number(user.id), user]; }));
   return readRows_('reservations')
     .filter(function (r) { return localDate_(r.start_at) === day; })
     .map(function (r) {
-      const room = findById_('rooms', r.room_id);
-      const user = findById_('users', r.user_id);
+      const room = roomsById.get(Number(r.room_id));
+      const user = usersById.get(Number(r.user_id));
       return Object.assign({}, r, {
         room_name: room ? room.name : '不明な会議室',
         user_name: user ? user.name : '不明な予約者',
